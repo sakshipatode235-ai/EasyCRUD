@@ -80,6 +80,7 @@ pipeline {
             steps {
                 dir('backend') {
                     sh '''
+                        export TMPDIR=/opt/temp
                         trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 backend:${BUILD_NUMBER}
                     '''
                 }

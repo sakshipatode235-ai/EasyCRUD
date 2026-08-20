@@ -47,7 +47,7 @@ pipeline {
             }
         }
 
-         stage('SonarQube Analysis') {
+        stage('SonarQube Analysis') {
             steps {
                 dir('backend') {
                     withSonarQubeEnv('sonar') {
@@ -59,38 +59,44 @@ pipeline {
 
         stage('Quality Gates') {
             steps {
-                timeout(time: 2, unit: 'MINUTES'){
+                timeout(time: 2, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
         }
-        stage('Docker build'){
-            steps{
-                dir('backend'){
+
+        stage('Docker build') {
+            steps {
+                dir('backend') {
                     sh '''
-                    docker build -t backend:${BUILD_NUMBER} .
-                    docker images 
+                        docker build -t backend:${BUILD_NUMBER} .
+                        docker images
                     '''
                 }
             }
         }
+
         // stage('Trivy Scan') {
         //     steps {
         //         dir('backend') {
         //             sh '''
-        //                trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 backend:${BUILD_NUMBER}
+        //                 trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 backend:${BUILD_NUMBER}
         //             '''
         //         }
         //     }
-        // } 
-        stage('push to ECR'){
-            steps{
-            sh '''
-            aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 525382241025.dkr.ecr.us-east-2.amazonaws.com
-            docker tag project-image:${BUILD_NUMBER} {ECR_repo}:${BUILD_NUMBER}
-            docker push {ECR_repo}:${BUILD_NUMBER}
+        // }
 
-            '''
+        stage('push to ECR') {
+            steps {
+                sh '''
+                    aws ecr get-login-password --region us-east-2 | \
+                    docker login --username AWS --password-stdin \
+                    525382241025.dkr.ecr.us-east-2.amazonaws.com
+
+                    docker tag backend:${BUILD_NUMBER} ${ECR_repo}:${BUILD_NUMBER}
+                    docker push ${ECR_repo}:${BUILD_NUMBER}
+                '''
+            }
         }
     }
 }

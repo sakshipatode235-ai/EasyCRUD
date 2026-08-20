@@ -43,13 +43,13 @@ pipeline {
         }
         stage('sonarqube analysis'){
             steps{
-                dir('backend')[
+                dir('backend'){
                     withSonarQubeEnv('sonar'){
                         sh 'mvn sonar:sonar'
                         waitForQualityGate abortPipeline: true
                     }
 
-                ]
+                }
             }
         }
         stage('Quality-Gates'){

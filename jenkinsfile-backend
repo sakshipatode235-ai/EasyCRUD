@@ -46,20 +46,19 @@ pipeline {
             }
         }
 
-        stage('sonarqube analysis') {
+         stage('SonarQube Analysis') {
             steps {
                 dir('backend') {
                     withSonarQubeEnv('sonar') {
                         sh 'mvn sonar:sonar'
-                        
                     }
                 }
             }
         }
 
-        stage('Quality-Gates') {
+        stage('Quality Gates') {
             steps {
-                timeout(time: 30, unit: "MINUTES"){
+                timeout(time: 5, unit: 'MINUTES'){
                     waitForQualityGate abortPipeline: true
                 }
             }

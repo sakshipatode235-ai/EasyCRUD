@@ -2,12 +2,15 @@ pipeline {
     agent {
         label 'worker'
     }
-    tools{
+
+    tools {
         maven 'maven'
     }
-    environment{
+
+    environment {
         my_aws_credentials = credentials('worker-aws-cred')
     }
+
     stages {
         stage('Checkout') {
             steps {
@@ -32,31 +35,34 @@ pipeline {
                 }
             }
         }
-        stage('Artifact to s3'){
-            steps{
-                dir('backend'){
+
+        stage('Artifact to s3') {
+            steps {
+                dir('backend') {
                     sh '''
-                    aws s3 cp ./target/*.jar s3://artifact-2-s3/Artifacts/student.jar
+                        aws s3 cp ./target/*.jar s3://artifact-2-s3/Artifacts/student.jar
                     '''
                 }
             }
         }
-        stage('sonarqube analysis'){
-            steps{
-                dir('backend'){
-                    withSonarQubeEnv('sonar'){
-                        sh 'mvn sonar:sonar'
-                        waitForQualityGate abortPipeline: true
-                    }
 
+        stage('sonarqube analysis') {
+            steps {
+                dir('backend') {
+                    withSonarQubeEnv('sonar') {
+                        sh 'mvn sonar:sonar'
+                        
+                    }
                 }
             }
         }
-        stage('Quality-Gates'){
-            steps{
-                timeout(time: 30 ,unit: "MINUTES")
+
+        stage('Quality-Gates') {
+            steps {
+                timeout(time: 30, unit: "MINUTES"){
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
-
     }
 }

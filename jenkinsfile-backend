@@ -84,6 +84,7 @@ pipeline {
             }
         } 
         stage('push to ECR'){
+            steps{
             sh '''
             aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 525382241025.dkr.ecr.us-east-2.amazonaws.com
             docker tag project-image:${BUILD_NUMBER} {ECR_repo}:${BUILD_NUMBER}

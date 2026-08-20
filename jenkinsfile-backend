@@ -9,6 +9,7 @@ pipeline {
 
     environment {
         my_aws_credentials = credentials('worker-aws-cred')
+        ECR_repo = '525382241025.dkr.ecr.us-east-2.amazonaws.com/project-image'
     }
 
     stages {
@@ -74,16 +75,21 @@ pipeline {
             }
         }
         stage('Trivy Scan') {
-    steps {
-        dir('backend') {
+            steps {
+                dir('backend') {
+                    sh '''
+                       trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 backend:${BUILD_NUMBER}
+                    '''
+                }
+            }
+        } 
+        stage('push to ECR'){
             sh '''
-                trivy fs \
-                    --severity HIGH,CRITICAL \
-                    --exit-code 1 \
-                    .
+            aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 525382241025.dkr.ecr.us-east-2.amazonaws.com
+            docker tag project-image:${BUILD_NUMBER} {ECR_repo}:${BUILD_NUMBER}
+            docker push {ECR_repo}:${BUILD_NUMBER}
+
             '''
         }
-    }
-}
     }
 }

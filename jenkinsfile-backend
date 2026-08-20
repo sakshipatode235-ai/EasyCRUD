@@ -2,147 +2,45 @@ pipeline {
     agent {
         label 'worker'
     }
-
     tools{
-        maven 'mvn'
+        maven 'maven'
     }
-
-    environment {
-        my_aws_cred = credentials('aws-access')
-        ECR_REPO = '525382241025.dkr.ecr.us-west-2.amazonaws.com/backend'
+    environment{
+        my_aws_credentials = credentials('aws-cred')
     }
-
     stages {
-        stage('Checkout'){
+        stage('Checkout') {
             steps {
-                git branch: 'main', credentialsId: 'github-cred', url: 'https://github.com/mayurpandit25/EasyCRUD.git'
+                git branch: 'main',
+                    url: 'https://github.com/sakshipatode235-ai/EasyCRUD.git'
             }
         }
 
-        stage('Build'){
+        stage('Build') {
             steps {
-                dir('backend'){
+                dir('backend') {
                     sh 'mvn clean package'
                 }
             }
+
             post {
                 success {
-                    archiveArtifacts artifacts: 'backend/target/*.jar', fingerprint: true
-                }
-            }
-        }
-
-        stage('Artifact to S3') {
-            steps {
-                sh '''
-                    sudo snap install aws-cli --classic
-                    aws s3 cp backend/target/*.jar s3://mayurcbz.spacee/Artifact/student.jar
-                '''
-            }
-        }
-
-        stage('SonarQube Analysis') {
-            steps {
-                dir('backend') {
-                    withSonarQubeEnv('sonar') {
-                        sh 'mvn sonar:sonar'
-                    }
-                }
-            }
-        }
-
-        stage('Quality Gates') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES'){
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-
-        stage('Docker Build') {
-            steps {
-                dir('backend') {
-                    sh '''
-                        docker build -t backend:${BUILD_NUMBER} .
-                        docker images
-                    '''
-                }
-            }
-        }
-
-        stage('Trivy image scanning') {
-            steps {
-                sh '''
-                  trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 backend:${BUILD_NUMBER}
-                '''
-            }
-        }
-
-        stage('Approval') {
-            steps {
-                timeout(time: 30, unit: 'MINUTES') {
-                    input message: 'Approve deployment to Kubernetes?', ok: 'Approve'
-                }
-            }
-        }
-
-        stage('Push To ECR') {
-            steps {
-                sh '''
-                    aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 525382241025.dkr.ecr.us-west-2.amazonaws.com
-                    docker tag backend:${BUILD_NUMBER} ${ECR_REPO}:${BUILD_NUMBER}
-                    docker push ${ECR_REPO}:${BUILD_NUMBER}
-                '''
-            }
-        }
-
-        stage('Update Manifest') {
-            steps {
-                sh '''
-                    sed -i "s|image: .*|image: ${ECR_REPO}:${BUILD_NUMBER}|" k8s/backend/backend-deployment.yaml
-                '''
-            }
-        }
-
-        stage("Push change to GITHUB"){
-            steps {
-
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: "github-cred",
-                        usernameVariable: "GIT_USERNAME",
-                        passwordVariable: "GIT_PASSWORD"
+                    archiveArtifacts(
+                        artifacts: 'backend/target/*.jar',
+                        fingerprint: true
                     )
-                ]) {
-
+                }
+            }
+        }
+        stage('Artifact to s3'){
+            steps{
+                dir('backend'){
                     sh '''
-                        git config user.name "mayurpandit25"
-                        git config user.email "panditmayur888@gmail.com"
-
-                        git add k8s/backend/backend-deployment.yaml
-                        git commit -m "Update backend-deployment"
-                        git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/mayurpandit25/EasyCRUD.git HEAD:main
+                    aws s3 cp /target/*.jar s3://artifact-2-s3/Artifacts/student.jar
                     '''
                 }
             }
         }
 
-        stage('Argocd Deployment') {
-            steps {
-                sh '''
-                    sudo aws eks update-kubeconfig --name my-eks-cluster1 --region us-west-2
-                    sudo kubectl apply -f argocd/backend-application.yaml
-                    sudo kubectl get pods -n argocd
-                    sudo kubectl get application -n argocd
-                '''
-            }
-        }
-
-    }
-    post {
-        success {
-            cleanWs()
-        }
     }
 }
-

@@ -76,15 +76,15 @@ pipeline {
             }
         }
 
-        // stage('Trivy Scan') {
-        //     steps {
-        //         dir('backend') {
-        //             sh '''
-        //                 trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 backend:${BUILD_NUMBER}
-        //             '''
-        //         }
-        //     }
-        // }
+        stage('Trivy Scan') {
+            steps {
+                dir('backend') {
+                    sh '''
+                        trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 backend:${BUILD_NUMBER}
+                    '''
+                }
+            }
+        }
 
         stage('push to ECR') {
             steps {

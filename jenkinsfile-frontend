@@ -19,7 +19,7 @@ pipeline {
                 }
             }
             post {
-                successs{
+                success{
                     archiveArtifacts artifacts: '/frontend/dist/**' , fingerprint:true
                 }
             }

@@ -19,8 +19,8 @@ pipeline {
                 }
             }
             post {
-                success{
-                    archiveArtifacts artifacts: '/frontend/dist/' , fingerprint:true
+                success {
+                    archiveArtifacts artifacts: 'frontend/dist/**', fingerprint: true
                 }
             }
         }

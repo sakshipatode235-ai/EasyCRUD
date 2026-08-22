@@ -70,6 +70,39 @@ pipeline {
                 '''
             }
         }
+        stage(push to github){
+            steps{
+                withCredentials{
+                    usernamePassword{
+                        credentialId: "github-cred"
+                        usernameVariable: "GIT_USERNAME"
+                        passwordVariable: "GIT_PASSWORD"
+
+                    }
+                }
+            }
+        }
+        stage("Push change to GITHUB"){
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: "github-cred",
+                        usernameVariable: "GIT_USERNAME",
+                        passwordVariable: "GIT_PASSWORD"
+                    )
+                ]) {
+
+                    sh '''
+                        git config user.name "sakshipatode-ai"
+                        git config user.email "sakshipatode235@gmail.com"
+
+                        git add k8s/frontend/frontend-deployment.yaml
+                        git commit -m "Update frontend-deployment"
+                        git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/sakshipatode235-ai/EasyCRUD.git HEAD:main
+                    '''
+                }
+            }
+        }
 
     }
 }

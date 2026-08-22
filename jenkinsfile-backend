@@ -119,7 +119,7 @@ pipeline {
                             --name my-eks-cluster1 \
                             --region us-east-2
 
-                        kubectl apply -f argocd/frontend-application.yaml
+                        kubectl apply -f argocd/backend-application.yaml
 
                         kubectl get applications -n argocd
                     '''

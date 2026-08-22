@@ -3,6 +3,7 @@ pipeline {
         label 'worker'
     }
     environment{
+        my_aws_credentials = credentials('worker-aws-cred')
         ECR_repo = '525382241025.dkr.ecr.us-east-2.amazonaws.com/frontend-image'
     }
     stages{

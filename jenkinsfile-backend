@@ -121,6 +121,7 @@ pipeline {
 
                         kubectl apply -f argocd/backend-application.yaml
                         kubectl apply -f argocd/ingress-application.yaml
+                        kubectl apply -f ingress/ingress.yaml
                         kubectl get applications -n argocd
                     '''
                 }

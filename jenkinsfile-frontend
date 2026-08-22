@@ -1,112 +1,155 @@
 pipeline {
-    agent{
+    agent {
         label 'worker'
     }
-    environment{
+
+    environment {
         my_aws_credentials = credentials('worker-aws-cred')
-        ECR_repo = '525382241025.dkr.ecr.us-east-2.amazonaws.com/frontend-image'
+        ECR_REPO = '525382241025.dkr.ecr.us-east-2.amazonaws.com/frontend-image'
     }
-    stages{
-        stage('git checkout'){
-            steps{
-                git branch: "main", credentialsId: "github-cred" ,url : "https://github.com/sakshipatode235-ai/EasyCRUD.git"
+
+    stages {
+
+        stage('Git Checkout') {
+            steps {
+                git branch: 'main',
+                    credentialsId: 'github-cred',
+                    url: 'https://github.com/sakshipatode235-ai/EasyCRUD.git'
             }
         }
-        stage('Build-frontend') {
+
+        stage('Build Frontend') {
             steps {
                 dir('frontend') {
                     sh '''
-                        npm install 
+                        npm install
                         npm run build
                     '''
                 }
             }
+
             post {
                 success {
-                    archiveArtifacts artifacts: 'frontend/dist/**', fingerprint: true
+                    archiveArtifacts(
+                        artifacts: 'frontend/dist/**',
+                        fingerprint: true
+                    )
                 }
             }
         }
-        stage('artifact to s3 '){
-            steps{
-                sh '''
-                aws s3 sync frontend/dist s3://artifact-2-s3/Artifacts/
 
+        stage('Artifact to S3') {
+            steps {
+                sh '''
+                    aws s3 sync frontend/dist s3://artifact-2-s3/Artifacts/
                 '''
             }
         }
-        stage('Docker Build'){
-            steps{
-                dir('frontend'){
+
+        stage('Docker Build') {
+            steps {
+                dir('frontend') {
                     sh '''
-                    docker rmi -f $(docker images -q)
-                    docker build -t frontend-image:${BUILD_NUMBER} .
-                    docker images
+                        docker rmi -f $(docker images -q) || true
+                        docker build -t frontend-image:${BUILD_NUMBER} .
+                        docker images
                     '''
                 }
             }
         }
-        // stage('trivy image scanning'){
-        //     steps{
-                
+
+        // stage('Trivy Image Scanning') {
+        //     steps {
         //         sh '''
-        //         trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 frontend-image:${BUILD_NUMBER}
+        //             trivy image \
+        //             --scanners vuln \
+        //             --severity HIGH,CRITICAL \
+        //             --exit-code 0 \
+        //             frontend-image:${BUILD_NUMBER}
         //         '''
         //     }
         // }
-        stage('Push to ECR'){
-            steps{
-                sh '''
-                aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 525382241025.dkr.ecr.us-east-2.amazonaws.com
-                docker tag frontend-image:${BUILD_NUMBER} ${ECR_repo}:${BUILD_NUMBER}
-                docker push ${ECR_repo}:${BUILD_NUMBER}
 
+        stage('Push to ECR') {
+            steps {
+                sh '''
+                    aws ecr get-login-password --region us-east-2 | \
+                    docker login \
+                    --username AWS \
+                    --password-stdin \
+                    525382241025.dkr.ecr.us-east-2.amazonaws.com
+
+                    docker tag \
+                    frontend-image:${BUILD_NUMBER} \
+                    ${ECR_REPO}:${BUILD_NUMBER}
+
+                    docker push ${ECR_REPO}:${BUILD_NUMBER}
                 '''
             }
         }
+
         stage('Update Manifest') {
             steps {
                 sh '''
-                    sed -i "s|image: .*|image: ${ECR_REPO}:${BUILD_NUMBER}|" k8s/frontend/frontend-deployment.yaml
+                    sed -i \
+                    "s|image: .*|image: ${ECR_REPO}:${BUILD_NUMBER}|" \
+                    k8s/frontend/frontend-deployment.yaml
                 '''
             }
         }
-        stage('Push change to GITHUB'){
+
+        stage('Push Change to GitHub') {
             steps {
                 withCredentials([
                     usernamePassword(
-                        credentialsId: "github-cred",
-                        usernameVariable: "GIT_USERNAME",
-                        passwordVariable: "GIT_PASSWORD"
+                        credentialsId: 'github-cred',
+                        usernameVariable: 'GIT_USERNAME',
+                        passwordVariable: 'GIT_PASSWORD'
                     )
                 ]) {
-
                     sh '''
                         git config user.name "sakshipatode-ai"
                         git config user.email "sakshipatode235@gmail.com"
 
                         git add k8s/frontend/frontend-deployment.yaml
+
                         git commit -m "Update frontend-deployment"
-                        git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/sakshipatode235-ai/EasyCRUD.git HEAD:main
+
+                        git push \
+                        https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/sakshipatode235-ai/EasyCRUD.git \
+                        HEAD:main
                     '''
                 }
             }
         }
-        stage('Update Argocd deployment') {
-            steps {
-                sh '''
-                    sudo aws eks update-kubeconfig --name my-eks-cluster1 --region us-west-2
-                    sudo kubectl apply -f argocd/frontend-application.yaml
-                    sudo kubectl get application -n argocd
-                '''
-            }
-        }
-    }
 
-    post {
+        stage('Update ArgoCD Deployment') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'worker-aws-cred'
+                ]]) {
+                    sh '''
+                        aws sts get-caller-identity
+
+                        aws eks update-kubeconfig \
+                        --name my-eks-cluster1 \
+                        --region us-east-2
+
+                        kubectl apply \
+                        -f argocd/frontend-application.yaml
+
+                        kubectl get applications \
+                        -n argocd
+                    '''
+                }
+            }
+       post {
         success {
             cleanWs()
         }
-
+    }  }
     }
+
+   
 }

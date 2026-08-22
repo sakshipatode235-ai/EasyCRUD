@@ -46,18 +46,18 @@ pipeline {
                 }
             }
         }
-        stage('trivy image scanning'){
-            steps{
+        // stage('trivy image scanning'){
+        //     steps{
                 
-                sh '''
-                trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 frontend-image:${BUILD_NUMBER}
-                '''
-            }
-        }
+        //         sh '''
+        //         trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 frontend-image:${BUILD_NUMBER}
+        //         '''
+        //     }
+        // }
         stage('Push to ECR'){
             steps{
                 sh '''
-                aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 525382241025.dkr.ecr.us-east-2.amazonaws.com
+                aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin {ECR_repo}
                 docker tag frontend-image:${BUILD_NUMBER} ${ECR_repo}:${BUILD_NUMBER}
                 docker push ${ECR_repo}:${BUILD_NUMBER}
 

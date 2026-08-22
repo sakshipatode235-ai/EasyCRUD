@@ -63,13 +63,13 @@ pipeline {
                 '''
             }
         }
-        stage('update manifest'){
-            steps{
+        stage('Update Manifest') {
+            steps {
                 sh '''
-                sed -i "s|image:.*|image:${ECR_repo}:${BUILD_NUMBER}|" k8s/frontend/frontend-deployment.yaml
-
+                    sed -i "s|image: .*|image: ${ECR_REPO}:${BUILD_NUMBER}|" k8s/frontend/frontend-deployment.yaml
                 '''
             }
+        }
 
         }
 

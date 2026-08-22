@@ -21,7 +21,7 @@ spec:
     spec: 
       containers: 
         - name: frontend-container
-          image: :37
+          image: :39
           ports: 
             - containerPort: 80
 

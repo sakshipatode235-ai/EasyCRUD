@@ -70,19 +70,7 @@ pipeline {
                 '''
             }
         }
-        stage(push to github){
-            steps{
-                withCredentials{
-                    usernamePassword{
-                        credentialId: "github-cred"
-                        usernameVariable: "GIT_USERNAME"
-                        passwordVariable: "GIT_PASSWORD"
-
-                    }
-                }
-            }
-        }
-        stage("Push change to GITHUB"){
+        stage('Push change to GITHUB'){
             steps {
                 withCredentials([
                     usernamePassword(

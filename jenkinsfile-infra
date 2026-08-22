@@ -4,7 +4,7 @@ pipeline {
     }
 
     environment {
-        MY_AWS_CRED = credentials('aws-access')
+        MY_AWS_CRED = credentials('worker-aws-access')
     }
 
     tools {

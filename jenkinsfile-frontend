@@ -39,7 +39,7 @@ pipeline {
                 dir('frontend'){
                     sh '''
                     docker rmi -f $(docker images -q)
-                    docker build -t frontend:${BUILD_NUMBER} .
+                    docker build -t frontend-image:${BUILD_NUMBER} .
                     docker images
                     '''
                 }

@@ -120,7 +120,7 @@ pipeline {
                             --region us-east-2
 
                         kubectl apply -f argocd/backend-application.yaml
-
+                        kubectl apply -f argocd/ingress-application.yaml
                         kubectl get applications -n argocd
                     '''
                 }

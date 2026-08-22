@@ -9,7 +9,6 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - host: mayurcbz.space
       http:
         paths:
           - path: /

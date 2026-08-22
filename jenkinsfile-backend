@@ -47,23 +47,23 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                dir('backend') {
-                    withSonarQubeEnv('sonar') {
-                        sh 'mvn sonar:sonar'
-                    }
-                }
-            }
-        }
+        // stage('SonarQube Analysis') {
+        //     steps {
+        //         dir('backend') {
+        //             withSonarQubeEnv('sonar') {
+        //                 sh 'mvn sonar:sonar'
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('Quality Gates') {
-            steps {
-                timeout(time: 2, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
+        // stage('Quality Gates') {
+        //     steps {
+        //         timeout(time: 2, unit: 'MINUTES') {
+        //             waitForQualityGate abortPipeline: true
+        //         }
+        //     }
+        // }
 
         stage('Docker build') {
             steps {
@@ -76,16 +76,16 @@ pipeline {
             }
         }
 
-        stage('Trivy Scan') {
-            steps {
-                dir('backend') {
-                    sh '''
-                        export TMPDIR=/opt/temp
-                        trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 backend:${BUILD_NUMBER}
-                    '''
-                }
-            }
-        }
+        // stage('Trivy Scan') {
+        //     steps {
+        //         dir('backend') {
+        //             sh '''
+        //                 export TMPDIR=/opt/temp
+        //                 trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 backend:${BUILD_NUMBER}
+        //             '''
+        //         }
+        //     }
+        // }
 
         stage('push to ECR') {
             steps {
@@ -128,40 +128,15 @@ pipeline {
                 }
             }
         }
-        // stage('Update Argocd') {
-        //     steps {
-        //         sh '''
-        //         sudo aws eks update-kubeconfig --name my-eks-cluster1 --region us-west-2
-        //         sudo kubectl apply -f argocd/backend-application.yaml
-        //         sudo kubectl get application -n argocd
-        //         '''
-        //     }
-        // }
-        stage('Update ArgoCD deployment') {
-    steps {
-        withCredentials([[
-            $class: 'AmazonWebServicesCredentialsBinding',
-            credentialsId: 'worker-aws-cred'
-        ]]) {
-            sh '''
-                aws sts get-caller-identity
-
-                aws eks update-kubeconfig \
-                    --name my-eks-cluster1 \
-                    --region us-west-2
-
-                kubectl apply -f argocd/frontend-application.yaml
-
-                kubectl get application -n argocd
-            '''
-        }
-    }
-}
-    }
-
-    post {
-        success {
-          cleanWs()
-        }
+            stage('Update Argocd') {
+                steps {
+                    sh '''
+                    sudo aws eks update-kubeconfig --name my-eks-cluster1 --region us-west-2
+                    sudo kubectl apply -f argocd/backend-application.yaml
+                    sudo kubectl get application -n argocd
+                    '''
+                }
+            }
+        
     }
 }

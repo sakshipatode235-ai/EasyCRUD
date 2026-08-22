@@ -7,10 +7,7 @@ pipeline {
         MY_AWS_CRED = credentials('worker-aws-access')
     }
 
-    tools {
-        terraform "tf"
-    }
-
+    
     stages{
         stage('Checkout') {
             steps {
